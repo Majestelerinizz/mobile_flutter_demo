@@ -385,7 +385,7 @@ class _ManagerDashboardScreenState extends ConsumerState<ManagerDashboardScreen>
 
   Widget _buildStatsRow(BuildContext context) {
     final buildings = ref.watch(buildingsStoreProvider);
-    
+
     // Toplam daire ve dolu daire hesapla
     int totalApartments = 0;
     int occupiedApartments = 0;
@@ -393,7 +393,7 @@ class _ManagerDashboardScreenState extends ConsumerState<ManagerDashboardScreen>
       totalApartments += building.totalApartments;
       occupiedApartments += building.occupiedApartments;
     }
-    
+
     return Row(
       children: [
         Expanded(

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_sizes.dart';
 import '../../../../core/theme/app_typography.dart';
+
 import '../../../../shared/widgets/settings_tab.dart';
 import '../../../../shared/providers/navigation_provider.dart';
+
 import '../../../apartments/domain/entities/apartment_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../dues/presentation/screens/my_dues_screen.dart';
+import '../../../tickets/presentation/screens/my_tickets_screen.dart';
 
 class ResidentDashboardScreen extends ConsumerStatefulWidget {
   const ResidentDashboardScreen({super.key});
@@ -24,7 +29,9 @@ class _ResidentDashboardScreenState
   @override
   void initState() {
     super.initState();
+
     _tabController = TabController(length: 4, vsync: this);
+
     _tabController.addListener(() {
       ref.read(residentTabIndexProvider.notifier).state = _tabController.index;
     });
@@ -38,8 +45,11 @@ class _ResidentDashboardScreenState
 
   @override
   Widget build(BuildContext context) {
+    final currentIndex = ref.watch(residentTabIndexProvider);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Sakin Paneli'), centerTitle: true),
+      appBar: AppBar(title: const Text('Sakin Ekranı'), centerTitle: true),
+
       body: TabBarView(
         controller: _tabController,
         children: [
@@ -49,7 +59,22 @@ class _ResidentDashboardScreenState
           _buildSettingsTab(),
         ],
       ),
+
+      // 🔥 SADECE ARIZALAR TAB’INDA GÖRÜNÜR
+      // floatingActionButton: currentIndex == 2
+      //     ? FloatingActionButton(
+      //         onPressed: () {
+      //           debugPrint("Yeni arıza oluştur");
+      //         },
+      //         child: const Icon(Icons.add),
+      //       )
+      //     : null,
       bottomNavigationBar: BottomNavigationBar(
+        currentIndex: currentIndex,
+        onTap: (index) {
+          ref.read(residentTabIndexProvider.notifier).state = index;
+          _tabController.animateTo(index);
+        },
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Ana Sayfa'),
           BottomNavigationBarItem(icon: Icon(Icons.receipt), label: 'Aidatlar'),
@@ -59,19 +84,18 @@ class _ResidentDashboardScreenState
           ),
           BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Ayarlar'),
         ],
-        currentIndex: ref.watch(residentTabIndexProvider),
-        onTap: (index) {
-          ref.read(residentTabIndexProvider.notifier).state = index;
-          _tabController.animateTo(index);
-        },
       ),
     );
   }
 
+  // ---------------- HOME ----------------
+
   Widget _buildHomeTab() {
     final apartment = _getDummyApartment();
     final authState = ref.watch(authStateProvider);
+
     final userName = authState.user?.name ?? apartment.residentName;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSizes.spacingL),
       child: Column(
@@ -85,7 +109,9 @@ class _ResidentDashboardScreenState
               color: Color(0xFF0F172A),
             ),
           ),
+
           const SizedBox(height: AppSizes.spacingXS),
+
           Text(
             'Daire ${apartment.apartmentNumber}',
             style: const TextStyle(
@@ -94,11 +120,17 @@ class _ResidentDashboardScreenState
               color: Color(0xFF475569),
             ),
           ),
+
           const SizedBox(height: AppSizes.spacingL),
+
           _buildPaymentStatusCard(apartment),
+
           const SizedBox(height: AppSizes.spacingL),
+
           _buildQuickActionsRow(),
+
           const SizedBox(height: AppSizes.spacingL),
+
           const Text(
             'Son İşlemler',
             style: TextStyle(
@@ -107,34 +139,30 @@ class _ResidentDashboardScreenState
               color: Color(0xFF0F172A),
             ),
           ),
+
           const SizedBox(height: AppSizes.spacingM),
+
           _buildTransactionHistory(),
         ],
       ),
     );
   }
 
+  // ---------------- TABS ----------------
+
   Widget _buildDuesTab() {
-    return Center(
-      child: Text(
-        'Aidatlar Sekmesi',
-        style: AppTypography.h2.copyWith(color: AppColors.textPrimary),
-      ),
-    );
+    return const MyDuesScreen();
   }
 
   Widget _buildIssuesTab() {
-    return Center(
-      child: Text(
-        'Arızalar Sekmesi',
-        style: AppTypography.h2.copyWith(color: AppColors.textPrimary),
-      ),
-    );
+    return const MyTicketsScreen(); // 🔥 DOĞRU
   }
 
   Widget _buildSettingsTab() {
     return const SettingsTab();
   }
+
+  // ---------------- CARD ----------------
 
   Widget _buildPaymentStatusCard(ApartmentEntity apartment) {
     final statusColor = apartment.paymentStatus == PaymentStatus.paid
@@ -184,36 +212,19 @@ class _ResidentDashboardScreenState
               ),
             ],
           ),
+
           const SizedBox(height: AppSizes.spacingM),
+
           Text(
             '₺${apartment.monthlyDues.toStringAsFixed(2)}',
             style: AppTypography.h1.copyWith(color: AppColors.primary),
           ),
-          const SizedBox(height: AppSizes.spacingM),
-          if (apartment.balance != 0)
-            Text(
-              apartment.balance > 0
-                  ? 'Bakiye: ₺${apartment.balance.toStringAsFixed(2)}'
-                  : 'Ödenmesi Gereken: ₺${(-apartment.balance).toStringAsFixed(2)}',
-              style: AppTypography.body2.copyWith(
-                color: apartment.balance > 0
-                    ? AppColors.success
-                    : AppColors.error,
-              ),
-            ),
-          if (apartment.lastPaymentDate != null) ...[
-            const SizedBox(height: AppSizes.spacingS),
-            Text(
-              'Son Ödeme: ${apartment.lastPaymentDate!.day}/${apartment.lastPaymentDate!.month}/${apartment.lastPaymentDate!.year}',
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
+
+  // ---------------- ACTIONS ----------------
 
   Widget _buildQuickActionsRow() {
     return Row(
@@ -264,9 +275,6 @@ class _ResidentDashboardScreenState
             const SizedBox(height: AppSizes.spacingS),
             Text(
               label,
-              textAlign: TextAlign.center,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
               style: AppTypography.caption.copyWith(
                 color: AppColors.textPrimary,
               ),
@@ -277,68 +285,13 @@ class _ResidentDashboardScreenState
     );
   }
 
-  Widget _buildTransactionHistory() {
-    // TODO: Backend API'den işlem geçmişini çek
-    // Şimdilik: Boş liste göster
-    final transactions = <Map<String, String>>[];
+  // ---------------- HISTORY ----------------
 
-    return Column(
-      children: transactions
-          .map(
-            (tx) => Container(
-              margin: const EdgeInsets.only(bottom: AppSizes.spacingM),
-              padding: const EdgeInsets.all(AppSizes.spacingM),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColors.borderColor),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        tx['type']!,
-                        style: AppTypography.h4.copyWith(
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: AppSizes.spacingXS),
-                      Text(
-                        tx['date']!,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        tx['amount']!,
-                        style: AppTypography.h4.copyWith(
-                          color: AppColors.success,
-                        ),
-                      ),
-                      const SizedBox(height: AppSizes.spacingXS),
-                      Text(
-                        tx['status']!,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.success,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          )
-          .toList(),
-    );
+  Widget _buildTransactionHistory() {
+    return const SizedBox(); // Şimdilik boş
   }
+
+  // ---------------- DUMMY ----------------
 
   ApartmentEntity _getDummyApartment() {
     return ApartmentEntity(
