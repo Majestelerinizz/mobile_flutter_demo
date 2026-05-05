@@ -31,8 +31,14 @@ class SettingsTab extends ConsumerWidget {
           _SettingsCard(
             children: [
               _SettingsTile(
+                icon: Icons.person_outline,
+                title: 'Profil Düzenle',
+                onTap: () => _showComingSoon(ref),
+              ),
+              const _Divider(),
+              _SettingsTile(
                 icon: Icons.lock_outline,
-                title: 'Şifre Değiştir',
+                title: 'Şifreyi Güncelle',
                 onTap: () => _showComingSoon(ref),
               ),
               const _Divider(),
@@ -85,12 +91,25 @@ class SettingsTab extends ConsumerWidget {
           const SizedBox(height: AppSizes.spacingXL),
 
           // Token expiry test button (DEBUG ONLY - production'da gizli)
+          // if (kDebugMode) ...[
+          //   _TokenTestButton(),
+          //   const SizedBox(height: AppSizes.spacingM),
+          // ],
+
+          // _LogoutButton(),
+          // const SizedBox(height: AppSizes.spacingL),
           if (kDebugMode) ...[
-            _TokenTestButton(),
-            const SizedBox(height: AppSizes.spacingM),
+            Row(
+              children: const [
+                Expanded(child: _CompactTokenTestButton()),
+                SizedBox(width: AppSizes.spacingM),
+                Expanded(child: _CompactLogoutButton()),
+              ],
+            ),
+          ] else ...[
+            _LogoutButton(),
           ],
 
-          _LogoutButton(),
           const SizedBox(height: AppSizes.spacingL),
         ],
       ),
@@ -228,7 +247,10 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.spacingS),
       child: Text(
         title,
-        style: AppTypography.label.copyWith(color: AppColors.textSecondary),
+        style: AppTypography.h3.copyWith(
+          color: AppColors.textSecondary,
+          fontSize: 17,
+        ),
       ),
     );
   }
@@ -243,7 +265,7 @@ class _SettingsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: const Color.fromARGB(255, 232, 169, 22),
         borderRadius: BorderRadius.circular(AppSizes.cardRadius),
         border: Border.all(color: AppColors.border),
       ),
@@ -277,13 +299,19 @@ class _SettingsTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Icon(icon, size: AppSizes.iconSize, color: AppColors.primary),
+            Icon(
+              icon,
+              size: AppSizes.iconSize,
+              color: const Color.fromARGB(255, 0, 0, 0),
+            ),
             const SizedBox(width: AppSizes.spacingM),
             Expanded(
               child: Text(
                 title,
                 style: AppTypography.body1.copyWith(
                   color: AppColors.textPrimary,
+                  fontSize: 24,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
@@ -299,7 +327,7 @@ class _SettingsTile extends StatelessWidget {
             const Icon(
               Icons.chevron_right,
               size: AppSizes.iconSize,
-              color: AppColors.textDisabled,
+              color: Color.fromARGB(255, 0, 0, 0),
             ),
           ],
         ),
@@ -330,7 +358,7 @@ class _LogoutButton extends ConsumerWidget {
           ? null
           : () => _confirmLogout(context, ref),
       icon: const Icon(Icons.logout, size: AppSizes.iconSize),
-      label: const Text('Çıkış Yap'),
+      label: const Text('Oturumu Kapat'),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.error,
         foregroundColor: Colors.white,
@@ -348,7 +376,7 @@ class _LogoutButton extends ConsumerWidget {
     showDialog<void>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Çıkış Yap', style: AppTypography.h3),
+        title: const Text('Oturumu Kapat', style: AppTypography.h3),
         content: const Text(
           'Hesabınızdan çıkış yapmak istediğinize emin misiniz?',
           style: AppTypography.body1,
@@ -369,7 +397,7 @@ class _LogoutButton extends ConsumerWidget {
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Çıkış Yap', style: TextStyle(fontSize: 16)),
+            child: const Text('Oturumu Kapat', style: TextStyle(fontSize: 16)),
           ),
         ],
       ),
@@ -383,7 +411,7 @@ class _TokenTestButton extends ConsumerWidget {
     return ElevatedButton.icon(
       onPressed: () => _checkTokenExpiry(context, ref),
       icon: const Icon(Icons.timer_outlined, size: AppSizes.iconSize),
-      label: const Text('Token Süresi Kontrol (Test)'),
+      label: const Text('Token Süresi Kontrol (Den)'),
       style: ElevatedButton.styleFrom(
         backgroundColor: AppColors.warning,
         foregroundColor: Colors.white,
@@ -424,5 +452,53 @@ class _TokenTestButton extends ConsumerWidget {
             type: ToastType.success,
           );
     }
+  }
+}
+
+class _CompactLogoutButton extends ConsumerWidget {
+  const _CompactLogoutButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authStateProvider);
+
+    return OutlinedButton.icon(
+      onPressed: authState.isLoading
+          ? null
+          : () => _LogoutButton()._confirmLogout(context, ref),
+      icon: const Icon(Icons.logout, size: 20),
+      label: const Text('Çıkış'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.error,
+        side: const BorderSide(color: AppColors.error),
+        minimumSize: const Size(double.infinity, 48),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.buttonRadius),
+        ),
+        textStyle: AppTypography.label,
+      ),
+    );
+  }
+}
+
+class _CompactTokenTestButton extends ConsumerWidget {
+  const _CompactTokenTestButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return OutlinedButton.icon(
+      onPressed: () => _TokenTestButton()._checkTokenExpiry(context, ref),
+      icon: const Icon(Icons.timer_outlined, size: 20),
+      label: const Text('Token Test'),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.warning,
+        side: const BorderSide(color: AppColors.warning),
+        minimumSize: const Size(double.infinity, 48),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppSizes.buttonRadius),
+        ),
+        textStyle: AppTypography.label,
+      ),
+    );
   }
 }
